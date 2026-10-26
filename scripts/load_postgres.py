@@ -1,27 +1,40 @@
 import pandas as pd
 import os
-from sqlalchemy import create_engine
+import logging
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+
+load_dotenv()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def load_to_postgres():
     cleaned_path = os.path.join('data', 'cleaned_customers.csv')
-    
     if not os.path.exists(cleaned_path):
-        print(f"❌ Error: {cleaned_path} not found. Please run scripts/clean_data.py first.")
+        logging.error("Cleaned dataset missing.")
         return
 
-    print("Loading cleaned dataset...")
+    logging.info("Reading preprocessed data...")
     df = pd.read_csv(cleaned_path)
     
-    # Connect to PostgreSQL (replace 'your_password' with your actual pgAdmin password)
-    print("Connecting to PostgreSQL database...")
-    engine = create_engine('postgresql://postgres:your_password@localhost:5432/customer_analytics_db')
+    db_user = os.getenv("DB_USER")
+    db_pass = os.getenv("DB_PASSWORD")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+    db_name = os.getenv("DB_NAME")
     
-    # Automated table creation and data insertion
+    connection_url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+    engine = create_engine(connection_url)
+    
+    logging.info("Ingesting records into PostgreSQL table 'customers'...")
     df.to_sql('customers', engine, if_exists='replace', index=False)
-    print("✅ Successfully loaded cleaned dataset into PostgreSQL table: 'customers'!")
+    
+    # Create index for query optimization on large datasets
+    with engine.connect() as connection:
+        logging.info("Creating database index for performance optimization...")
+        connection.execute(text("CREATE INDEX IF NOT EXISTS idx_customer_country ON customers (country);"))
+        connection.commit()
+        
+    logging.info("✅ Database ingestion and indexing completed successfully!")
 
 if __name__ == "__main__":
     load_to_postgres()
-    
-    
-    
