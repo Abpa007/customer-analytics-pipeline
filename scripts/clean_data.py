@@ -1,30 +1,31 @@
 import pandas as pd
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def clean_data():
+    os.makedirs('data', exist_ok=True)
     raw_path = os.path.join('data', 'customers.csv')
     output_path = os.path.join('data', 'cleaned_customers.csv')
     
-    # Check if raw file exists
     if not os.path.exists(raw_path):
-        print(f"❌ Error: {raw_path} not found. Please place your raw CSV inside the 'data/' folder.")
+        logging.error(f"Raw dataset not found at {raw_path}")
         return
 
-    print("Loading raw customer dataset...")
+    logging.info("Loading raw customer dataset...")
     df = pd.read_csv(raw_path)
     
-    # Standardize column names: lowercase, strip spaces, use underscores
+    # Standardize schema
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+    initial_shape = df.shape
     
-    # Drop completely empty rows
+    # Data Quality & Cleaning
     df = df.dropna(how='all')
-    
-    # Fill missing string/categorical values to prevent downstream database or dashboard errors
     df.fillna('Unknown', inplace=True)
     
-    # Save cleaned data to the data folder
     df.to_csv(output_path, index=False)
-    print(f"✅ Data successfully cleaned and saved to {output_path}!\nFinal Dataset Shape: {df.shape}")
+    logging.info(f"Data successfully cleaned. Shape transformed from {initial_shape} to {df.shape}")
 
 if __name__ == "__main__":
     clean_data()
