@@ -37,6 +37,8 @@ An end-to-end, production-grade data engineering and business intelligence solut
 
 📈 Verifiable Development History: Built using a strict multi-commit architectural workflow demonstrating modular software design practices.
 
+
+📂 Project Directory Structure
 customer-analytics-pipeline/
 ├── data/
 │   ├── customers.csv             # Raw input dataset (100k records)
